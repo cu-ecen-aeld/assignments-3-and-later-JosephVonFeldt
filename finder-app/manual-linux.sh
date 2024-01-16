@@ -35,9 +35,16 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
+    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
+    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
+    make -j4 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
+    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
+    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
 fi
 
 echo "Adding the Image in outdir"
+
+cp -a ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ${OUTDIR}
 
 echo "Creating the staging directory for the root filesystem"
 cd "$OUTDIR"
@@ -48,7 +55,6 @@ then
 fi
 
 # TODO: Create necessary base directories
-
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/busybox" ]
 then
@@ -62,19 +68,65 @@ fi
 
 # TODO: Make and install busybox
 
+make distclean
+make defconfig
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+make CONFIG_PREFIX="${OUTDIR}/rootfs" ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
+
 echo "Library dependencies"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a "${OUTDIR}/rootfs/bin/busybox" | grep "program interpreter"
+${CROSS_COMPILE}readelf -a "${OUTDIR}/rootfs/bin/busybox" | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
+sroot=$(aarch64-none-linux-gnu-gcc --print-sysroot)
+
+cd "${OUTDIR}/rootfs"
+mkdir -p bin dev stc home lib lib64 proc sbin sys tmp usr var
+mkdir -p usr/bin usr/lib usr/sbin
+mkdir -p var/log
+
+sudo cp -a "${sroot}/lib/ld-linux-aarch64.so.1" lib64
+sudo cp -a "${sroot}/lib/ld-linux-aarch64.so.1" lib
+
+sudo cp -a "${sroot}/lib64/libm.so.6" lib64
+sudo cp -a "${sroot}/lib64/libresolv.so.2" lib64
+sudo cp -a "${sroot}/lib64/libc.so.6" lib64
+
+sudo cp -a "${sroot}/lib64/ld-2.33.so" lib64
+sudo cp -a "${sroot}/lib64/libm-2.33.so" lib64
+sudo cp -a "${sroot}/lib64/libresolv-2.33.so" lib64
+sudo cp -a "${sroot}/lib64/libc-2.33.so" lib64
 
 # TODO: Make device nodes
+mkdir -p "${OUTDIR}/rootfs/dev"
+sudo mknod -m 666 dev/null c 1 3
+sudo mknod -m 600 dev/console c 5 1
 
 # TODO: Clean and build the writer utility
-
+cd ${FINDER_APP_DIR}
+make clean
+make CROSS_COMPILE=${CROSS_COMPILE}
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
 
-# TODO: Chown the root directory
+mkdir -p "${OUTDIR}/rootfs/home"
+mkdir -p "${OUTDIR}/rootfs/home/conf"
 
+cp -a "${FINDER_APP_DIR}/finder.sh" "${OUTDIR}/rootfs/home"
+cp -a "${FINDER_APP_DIR}/finder-test.sh" "${OUTDIR}/rootfs/home"
+cp -a "${FINDER_APP_DIR}/autorun-qemu.sh" "${OUTDIR}/rootfs/home"
+cp -a "${FINDER_APP_DIR}/writer" "${OUTDIR}/rootfs/home"
+
+cp -a "${FINDER_APP_DIR}/conf/assignment.txt" "${OUTDIR}/rootfs/home/conf"
+cp -a "${FINDER_APP_DIR}/conf/username.txt" "${OUTDIR}/rootfs/home/conf"
+
+# TODO: Chown the root directory
+cd "${OUTDIR}/rootfs"
+
+sudo chown -R root:root *
 # TODO: Create initramfs.cpio.gz
+find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
+
+cd ${OUTDIR}
+gzip -f initramfs.cpio
+
