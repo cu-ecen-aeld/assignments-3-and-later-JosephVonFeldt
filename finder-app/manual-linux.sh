@@ -92,10 +92,10 @@ sudo cp -a "${sroot}/lib64/libm.so.6" lib64
 sudo cp -a "${sroot}/lib64/libresolv.so.2" lib64
 sudo cp -a "${sroot}/lib64/libc.so.6" lib64
 
-sudo cp -a "${sroot}/lib64/ld-2.33.so" lib64
-sudo cp -a "${sroot}/lib64/libm-2.33.so" lib64
-sudo cp -a "${sroot}/lib64/libresolv-2.33.so" lib64
-sudo cp -a "${sroot}/lib64/libc-2.33.so" lib64
+sudo cp -a "${sroot}/lib64/ld-2.31.so" lib64
+sudo cp -a "${sroot}/lib64/libm-2.31.so" lib64
+sudo cp -a "${sroot}/lib64/libresolv-2.31.so" lib64
+sudo cp -a "${sroot}/lib64/libc-2.31.so" lib64
 
 # TODO: Make device nodes
 mkdir -p "${OUTDIR}/rootfs/dev"
