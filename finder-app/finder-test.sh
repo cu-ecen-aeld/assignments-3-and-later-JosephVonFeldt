@@ -9,7 +9,7 @@ NUMFILES=10
 WRITESTR=AELD_IS_FUN
 WRITEDIR=/tmp/aeld-data
 #username=$(cat conf/username.txt)
-username=$(cat etc/finder-app/conf/username.txt)
+username=$(cat /etc/finder-app/conf/username.txt)
 
 if [ $# -lt 3 ]
 then
@@ -35,7 +35,7 @@ rm -rf "${WRITEDIR}"
 # create $WRITEDIR if not assignment1
 # assignment=`cat ../conf/assignment.txt` ## IDK why this is broken now
 # assignment=`cat conf/assignment.txt`
-assignment=`cat etc/finder-app/conf/assignment.txt`
+assignment=`cat /etc/finder-app/conf/assignment.txt`
 
 if [ $assignment != 'assignment1' ]
 then
